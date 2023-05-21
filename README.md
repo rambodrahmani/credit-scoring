@@ -19,7 +19,17 @@ xhost local:root
 
 In order to run the Jupyter notebooks, `src` must be in your Python path:
 ```bash
-echo "export PYTHONPATH=\"${PYTHONPATH}:/home/rr/DevOps/cerdit-scoring/\"" > .bashrc
+export PYTHONPATH="${PYTHONPATH}:/home/rr/DevOps/credit-scoring"
+```
+
+Create models directory:
+```bash
+mkdir models
+```
+
+Download datasets:
+```bash
+
 ```
 
 Start the Jupyter Lab:
