@@ -1,10 +1,7 @@
-mdlp
 tqdm
-Wand
 numpy
 optuna
 plotly
-EMP-PY
 kaleido
 pyarrow
 seaborn
@@ -13,9 +10,6 @@ hmeasure
 optbinning
 matplotlib
 jupyterlab
-tensorflow
 fastparquet
 torchvision
 scikit-learn
-tensorflow_addons
-mdlp-discretization
