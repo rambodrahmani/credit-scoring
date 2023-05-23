@@ -1,0 +1,15 @@
+tqdm
+numpy
+optuna
+plotly
+kaleido
+pyarrow
+seaborn
+jupyter
+hmeasure
+optbinning
+matplotlib
+jupyterlab
+fastparquet
+torchvision
+scikit-learn
