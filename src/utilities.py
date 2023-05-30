@@ -11,7 +11,6 @@ import os
 import json
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
 # show all pandas dataframe columns
 pd.set_option('display.max_columns', None)
@@ -21,13 +20,25 @@ def create_directory(dir_path):
     Creates the specified directory if it does not exist.
     """
     if not os.path.exists(dir_path):
-        os.mkdir(dir_path)
+        os.makedirs(dir_path)
 
-def read_csv(dataset_path, dtype=None, sep=',', header='infer'):
+def read_csv(dataset_path, dtype=None, sep=',', header='infer', encoding=None):
     """
     Loads the provided .csv file as a pandas Dataframe.
     """
-    return pd.read_csv(dataset_path, dtype=dtype, sep=sep, header=header)
+    return pd.read_csv(dataset_path, dtype=dtype, sep=sep, header=header, encoding=encoding)
+
+def read_csvs(dataset_paths, dtype=None, sep=',', header='infer'):
+    """
+    Loads the provided .csv files as a single pandas Dataframe.
+    """
+    dfs = []
+
+    for dataset_path in dataset_paths:
+        df = read_csv(dataset_path, dtype=dtype, sep=sep, header=header)
+        dfs.append(df)
+
+    return pd.concat(dfs, ignore_index=True)
 
 def read_excel(dataset_path, dtype=None, header=0):
     """
@@ -70,22 +81,6 @@ def replace_to_nan(data, word):
     Replaces the given word with np.nan.
     """
     data.replace(word, np.nan, inplace=True)
-
-def save_dataset(data, features_scores, test_size, save_path):
-    """
-    Splits the preprocessed dataset in train and test and saves the dataframes
-    using the .parquet file format. The features scores dictionary is saved as well.
-    """
-    # store features selection scores
-    with open(os.path.join(save_path, 'features_scores.json'), 'w') as outfile:
-        json.dump(features_scores, outfile, indent=4)
-
-    train_split, test_split = train_test_split(data, test_size=test_size, shuffle=True, stratify=data[['defaulted']])
-    train_split.to_parquet(os.path.join(save_path, 'train.parquet'), index=False)
-    test_split.to_parquet(os.path.join(save_path, 'test.parquet'), index=False)
-
-    print("Train split size:", len(train_split))
-    print("Test split size:", len(test_split))
 
 def read_features_scores(dataset_path):
     """
