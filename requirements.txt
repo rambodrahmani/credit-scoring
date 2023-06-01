@@ -3,6 +3,7 @@ tqdm
 numpy
 optuna
 plotly
+EMP-PY
 kaleido
 pyarrow
 seaborn

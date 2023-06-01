@@ -7,7 +7,10 @@ utilities.py: Implementation of utility functions for plots.
 __author__      = "Rambod Rahmani <rambodrahmani@autistici.org>"
 __copyright__   = "Rambod Rahmani 2023"
 
+from src import utilities
+
 import os
+import optuna
 import itertools
 import numpy as np
 import pandas as pd
@@ -81,8 +84,7 @@ def plot_numerical_boxplots(data, size=(12,6), save_path=None, dpi=100):
     Plots the boxplot for all numerical features in the dataset.
     """
     boxplots_save_path = os.path.join(save_path, 'boxplots')
-    if not os.path.isdir(boxplots_save_path):
-        os.mkdir(boxplots_save_path)
+    utilities.create_directory(boxplots_save_path)
 
     plt.style.use("default")
     fig, axes = plt.subplots(1, 3, figsize=size, dpi=dpi, facecolor='w', edgecolor='k')
@@ -106,8 +108,7 @@ def plot_numerical_hist_kde(data, size=(12,6), save_path=None, dpi=100):
     Plots both histogram and Kernel Density Estimation for all numerical features in the dataset.
     """
     hist_kde_save_path = os.path.join(save_path, 'hist_kde')
-    if not os.path.isdir(hist_kde_save_path):
-        os.mkdir(hist_kde_save_path)
+    utilities.create_directory(hist_kde_save_path)
 
     plt.style.use("default")
     fig, axes = plt.subplots(1, 3, figsize=size, dpi=dpi, facecolor='w', edgecolor='k')
@@ -171,3 +172,11 @@ def plot_heatmap(data, figsize=(15, 15), save_path=None, dpi=100):
         plt.savefig(save_path + 'heatmap.pdf', format="pdf", bbox_inches="tight")
 
     plt.show()
+
+def plot_pareto_front(study, save_path):
+    """
+    Plots and saves the pareto front for the given Optuna study.
+    """
+    fig = optuna.visualization.plot_pareto_front(study, target_names=['ROC AUC', 'EMP'])
+    fig.write_image(save_path + 'pareto_front.pdf')
+    #fig.show()
