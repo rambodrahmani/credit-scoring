@@ -19,10 +19,13 @@ from src import evaluation
 
 import numpy as np
 
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_validate
 
 import optuna
+from optuna.samplers import NSGAIISampler
 
 def lr_objective(trial, data, labels, scoring, skf):
     """
@@ -46,6 +49,61 @@ def lr_objective(trial, data, labels, scoring, skf):
                              fit_intercept=fit_intercept, class_weight=class_weight,
                              solver=solver, max_iter=max_iter, multi_class=multi_class,
                              warm_start=warm_start, l1_ratio=l1_ratio, n_jobs=-1)
+
+    # evaluate metrics by cross-validation
+    scores = cross_validate(clf, data, labels, scoring=scoring, n_jobs=-1, cv=skf)
+    scores = np.nan_to_num(scores)
+    return scores['test_roc_auc'].mean(), scores['test_emp'].mean()
+
+def dt_objective(trial, data, labels, scoring, skf):
+    """
+    Optuna objective function for Decision Tree hyperparameters optimization.
+    """
+    # hyperparameters
+    criterion = trial.suggest_categorical('criterion', ['gini', 'entropy', 'log_loss'])
+    splitter = trial.suggest_categorical('splitter', ['best', 'random'])
+    min_samples_split = trial.suggest_int('min_samples_split', 2, 1000)
+    min_samples_leaf = trial.suggest_int('min_samples_leaf', 1, 50)
+    max_features = trial.suggest_categorical('max_features', ['auto', 'sqrt', 'log2', None])
+    max_leaf_nodes = trial.suggest_int('max_leaf_nodes', 1, 1000)
+    class_weight = trial.suggest_categorical('class_weight', [None, 'balanced'])
+
+    # model
+    clf = DecisionTreeClassifier(criterion=criterion, splitter=splitter,
+                                 min_samples_split=min_samples_split,
+                                 min_samples_leaf = min_samples_leaf,
+                                 max_features=max_features,
+                                 max_leaf_nodes=max_leaf_nodes,
+                                 class_weight=class_weight)
+
+    # evaluate metrics by cross-validation
+    scores = cross_validate(clf, data, labels, scoring=scoring, n_jobs=-1, cv=skf)
+    scores = np.nan_to_num(scores)
+    return scores['test_roc_auc'].mean(), scores['test_emp'].mean()
+
+def rf_objective(trial, data, labels, scoring, skf):
+    """
+    Optuna objective function for Random Forest hyperparameters optimization.
+    """
+    # hyperparameters
+    n_estimators = trial.suggest_int('n_estimators', 1, 1000)
+    criterion = trial.suggest_categorical('criterion', ['gini', 'entropy', 'log_loss'])
+    min_samples_split = trial.suggest_int('min_samples_split', 2, 1000)
+    min_samples_leaf = trial.suggest_int('min_samples_leaf', 1, 50)
+    max_features = trial.suggest_categorical('max_features', ['sqrt', 'log2', None])
+    max_leaf_nodes = trial.suggest_int('max_leaf_nodes', 1, 1000)
+    bootstrap = trial.suggest_categorical('bootstrap', [False, True])
+    warm_start = trial.suggest_categorical('warm_start', [False, True])
+
+    # model
+    clf = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion,
+                                 min_samples_split=min_samples_split,
+                                 min_samples_leaf=min_samples_leaf,
+                                 max_features=max_features,
+                                 max_leaf_nodes=max_leaf_nodes,
+                                 bootstrap=bootstrap,
+                                 warm_start=warm_start,
+                                 n_jobs=-1)
 
     # evaluate metrics by cross-validation
     scores = cross_validate(clf, data, labels, scoring=scoring, n_jobs=-1, cv=skf)
@@ -83,7 +141,10 @@ def optuna_search(objective, model_name, data, target, k_folds,
     skf = StratifiedKFold(n_splits=k_folds, shuffle=True)
 
     study = optuna.create_study(directions=['maximize', 'maximize'],
-                                sampler=optuna.samplers.NSGAIISampler())
+                                sampler=NSGAIISampler(population_size=200,
+                                                      mutation_prob=None,
+                                                      crossover_prob=0.9,
+                                                      swapping_prob=0.5))
     study.optimize(lambda trial: objective(trial, data, labels, scoring, skf),
                    n_trials=n_trials, n_jobs=-1, catch=(ValueError, UserWarning),
                    show_progress_bar=True)

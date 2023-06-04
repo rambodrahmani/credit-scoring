@@ -17,7 +17,6 @@ from src import plotting
 import sklearn
 import numpy as np
 import pandas as pd
-from sklearn import metrics
 from EMP.metrics import empCreditScoring
 
 def make_scorer(metric):
@@ -30,9 +29,9 @@ def roc_auc_score(y_true, y_pred):
     """
     Computes the ROC AUC score using sklearn.metrics.roc_auc_score().
     """
-    return metrics.roc_auc_score(y_true, y_pred)
+    return sklearn.metrics.roc_auc_score(y_true, y_pred)
 
-def compute_lgd_point_masses(y_true, y_pred):
+def compute_lgd_point_masses(y_true):
     """
     Estimates the bimodal LGD function point masses p0 and p1.
     """
@@ -47,8 +46,10 @@ def emp_score(y_true, y_pred):
     respectively. It only returns the score.
     """
     assert (len(y_true) == len(y_pred))
-    p_0, p_1 = compute_lgd_point_masses(y_true, y_pred)
-    return empCreditScoring(y_pred, y_true, p_0=p_0, p_1=p_1, ROI=0.2644,
+    p_0, p_1 = compute_lgd_point_masses(y_true)
+    return empCreditScoring(y_pred, y_true,
+                            p_0=p_0, p_1=p_1,
+                            ROI=0.2644,
                             print_output=False)[0]
 
 def emp_score_frac(y_true, y_pred):
@@ -58,6 +59,8 @@ def emp_score_frac(y_true, y_pred):
     respectively. It returns both the score and the fraction of excluded.
     """
     assert (len(y_true) == len(y_pred))
-    p_0, p_1 = compute_lgd_point_masses(y_true, y_pred)
-    return empCreditScoring(y_pred, y_true, p_0=p_0, p_1=p_1, ROI=0.2644,
+    p_0, p_1 = compute_lgd_point_masses(y_true)
+    return empCreditScoring(y_pred, y_true,
+                            p_0=p_0, p_1=p_1,
+                            ROI=0.2644,
                             print_output=False)
