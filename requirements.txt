@@ -1,5 +1,6 @@
 xlrd
 tqdm
+gdown
 numpy
 optuna
 plotly

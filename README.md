@@ -37,3 +37,9 @@ Start the Jupyter Lab:
 cd /home/rr/DevOps/credit-scoring
 ~/.local/bin/jupyter lab --no-browser --ip "*"
 ```
+
+## Download datasets and models
+Download the raw and preprocessed datasets as well as the results from the trained models using:
+```bash
+python src/download_data.py
+```
