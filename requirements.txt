@@ -5,6 +5,7 @@ numpy
 optuna
 plotly
 EMP-PY
+xgboost
 kaleido
 pyarrow
 seaborn

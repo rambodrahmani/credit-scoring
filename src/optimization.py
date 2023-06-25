@@ -7,10 +7,13 @@ evaluation.py: Implementation of utility functions for hyperparamters optimizati
 __author__      = "Rambod Rahmani <rambodrahmani@autistici.org>"
 __copyright__   = "Rambod Rahmani 2023"
 
+import warnings
+
 def warn(*args, **kwargs):
     pass
-import warnings
+
 warnings.warn = warn
+warnings.filterwarnings('ignore')
 
 from src import metrics
 from src import plotting
@@ -18,6 +21,8 @@ from src import utilities
 from src import evaluation
 
 import numpy as np
+
+from xgboost import XGBClassifier
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -86,7 +91,7 @@ def rf_objective(trial, data, labels, scoring, skf):
     Optuna objective function for Random Forest hyperparameters optimization.
     """
     # hyperparameters
-    n_estimators = trial.suggest_int('n_estimators', 1, 1000)
+    n_estimators = trial.suggest_int('n_estimators', 10, 1000)
     criterion = trial.suggest_categorical('criterion', ['gini', 'entropy', 'log_loss'])
     min_samples_split = trial.suggest_int('min_samples_split', 2, 1000)
     min_samples_leaf = trial.suggest_int('min_samples_leaf', 1, 50)
@@ -104,6 +109,38 @@ def rf_objective(trial, data, labels, scoring, skf):
                                  bootstrap=bootstrap,
                                  warm_start=warm_start,
                                  n_jobs=-1)
+
+    # evaluate metrics by cross-validation
+    scores = cross_validate(clf, data, labels, scoring=scoring, n_jobs=-1, cv=skf)
+    scores = np.nan_to_num(scores)
+    return scores['test_roc_auc'].mean(), scores['test_emp'].mean()
+
+def xgb_objective(trial, data, labels, scoring, skf):
+    """
+    Optuna objective function for XGBoost hyperparameters optimization.
+    """
+    # hyperparameters
+    n_estimators = trial.suggest_int('n_estimators', 10, 1000)
+    max_depth = trial.suggest_int('max_depth', 1, 1000)
+    max_leaves = trial.suggest_int('max_leaves', 0, 1000)
+    grow_policy = trial.suggest_int('grow_policy', 0, 1)
+    learning_rate = trial.suggest_float('learning_rate', 0.01, 1.0)
+    booster = trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart'])
+    tree_method = trial.suggest_categorical('tree_method', ['exact', 'approx', 'hist', 'gpu_hist', 'auto'])
+    gamma = trial.suggest_loguniform('gamma', 1e-8, 1.0)
+    min_child_weight = trial.suggest_int('min_child_weight', 1, 50)
+    subsample = trial.suggest_loguniform('subsample', 0.01, 1.0)
+    colsample_bytree = trial.suggest_loguniform('colsample_bytree', 0.01, 1.0)
+    reg_alpha = trial.suggest_loguniform('reg_alpha', 1e-8, 1.0)
+    reg_lambda = trial.suggest_loguniform('reg_lambda', 1e-8, 1.0)
+    eval_metric = trial.suggest_categorical('eval_metric', ['mlogloss'])
+
+    # model
+    clf = XGBClassifier(n_estimators=n_estimators, max_depth=max_depth, max_leaves=max_leaves,
+                        grow_policy=grow_policy, learning_rate=learning_rate, booster=booster,
+                        tree_method=tree_method, gamma=gamma, min_child_weight=min_child_weight,
+                        subsample=subsample, colsample_bytree=colsample_bytree, reg_alpha=reg_alpha,
+                        reg_lambda=reg_lambda, verbosity=0)
 
     # evaluate metrics by cross-validation
     scores = cross_validate(clf, data, labels, scoring=scoring, n_jobs=-1, cv=skf)
